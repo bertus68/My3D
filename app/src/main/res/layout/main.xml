@@ -3,10 +3,16 @@
     android:layout_height="fill_parent"
     android:orientation="vertical">
 
+	<android.opengl.GLSurfaceView
+		android:id="@+id/LEFTVIEW"
+		android:layout_width="fill_parent"
+		android:layout_height="0sp"
+		android:layout_weight="1"/>
 	
 	<android.opengl.GLSurfaceView
+		android:id="@+id/RIGHTVIEW"
 		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:id="@+id/GLVIEW"/>
+		android:layout_height="0sp"
+		android:layout_weight="1"/>
 	
 </LinearLayout>

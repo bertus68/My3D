@@ -11,11 +11,18 @@ import javax.microedition.khronos.egl.*;
 import javax.microedition.khronos.opengles.*;
 import java.nio.*;
 import java.io.*;
+import a.polverini.my.MainActivity.*;
 
 public class MainActivity extends Activity 
 {
 
-	private GLSurfaceView glView;
+	enum SIDE {
+		LEFT,
+		RIGHT
+		}
+
+	private GLSurfaceView leftView;
+	private GLSurfaceView rightView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -26,32 +33,43 @@ public class MainActivity extends Activity
 							 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.main);
 
-		glView = findViewById(R.id.GLVIEW);
-		glView.setRenderer(new MyRenderer3D(this));
+		leftView = findViewById(R.id.LEFTVIEW);
+		leftView.setRenderer(new MyRenderer3D(this, SIDE.LEFT));
+
+		rightView = findViewById(R.id.RIGHTVIEW);
+		rightView.setRenderer(new MyRenderer3D(this, SIDE.RIGHT));
     }
 
 	@Override 
 	protected void onPause() {
 		super.onPause(); 
-		glView.onPause(); 
+		leftView.onPause(); 
+		rightView.onPause(); 
 	} 
 
 	@Override
 	protected void onResume() {
 		super.onResume(); 
-		glView.onResume();
+		leftView.onResume();
+		rightView.onResume();
 	}
 
 	public static class MyRenderer3D implements Renderer {
 
-		private Context context;
+		private final Context context;
+		private final SIDE side;
+
 		private Cube cube;
 		private Light light;
 		private LookAt lookAt;
 
-		public MyRenderer3D(Context context) {
+		public MyRenderer3D(Context context, SIDE side) {
 			this.context = context;
-			lookAt = new LookAt();
+			this.side = side;
+			lookAt = new LookAt(
+				new Position(0.0f+(side == SIDE.LEFT ? +1.0f : -1.0f), 0.0f, 0.0f),
+				new Position(0.0f, 0.0f, -6.0f),
+				new Position(1.0f, 0.0f, 0.0f));
 			light = new Light();
 			cube = new Cube();
 		} 
@@ -99,25 +117,65 @@ public class MainActivity extends Activity
 		public abstract void draw(GL10 gl);
 	}
 
+	public static class Position {
+		public float x, y, z;
+		public Position(float x, float y, float z) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+		}
+	}
+
 	public static class LookAt extends Drawable {
-		class Position {
-			float x, y, z;
-			public Position(float x, float y, float z) {
-				this.x = x;
-				this.y = y;
-				this.z = z;
-			}
+
+		private Position eye;
+		private Position center;
+		private Position up;
+		
+		public LookAt() {
+			this(new Position(0.0f, 0.0f, 0.0f),
+				 new Position(0.0f, 0.0f, 0.0f),
+				 new Position(0.0f, 0.0f, 0.0f));
 		}
 		
-		Position eye = new Position(0.0f, 1.8f, 0.0f);
-		Position center = new Position(0.0f, 0.0f, -6.0f);
-		Position up = new Position(0.0f, 1.0f, 0.0f);
+		public LookAt(Position eye, Position center, Position up) {
+			this.eye = eye;
+			this.center = center;
+			this.up = up;
+		}
+		
+		public Position getEye() {
+			return this.eye;
+		}
+
+		public void setEye(Position position) {
+			this.eye = position;
+		}
+
+		
+		public Position getCenter() {
+			return this.center;
+		}
+
+		public void setCenter(Position position) {
+			this.center = position;
+		}
+		
+		public Position getUp() {
+			return this.up;
+		}
+
+		public void setUp(Position position) {
+			this.up = position;
+		}
+
 
 		public void draw(GL10 gl) {
 			GLU.gluLookAt(gl, eye.x, eye.y, eye.z, center.x, center.y, center.z, up.x, up.y, up.z);
 		}
-	}
 
+	}
+	
 	public static class Light extends Drawable {
 		private boolean enabled = true; 
 		private float[] ambient = {0.5f, 0.5f, 0.5f, 1.0f}; 
@@ -142,7 +200,8 @@ public class MainActivity extends Activity
 		}
 	}
 
-	public static class Cube {
+	public static class Cube extends Drawable {
+
 		private static float angle = 0.0f;
 		private static float speed = -1.5f;
 		private static int texture = 2;
@@ -181,11 +240,11 @@ public class MainActivity extends Activity
 		public void draw(GL10 gl) { 
 
 			gl.glPushMatrix();
-			
+
 			gl.glTranslatef(0.0f, 0.0f, -6.0f);
 			gl.glScalef(0.8f, 0.8f, 0.8f); 
 			gl.glRotatef(angle, 1.0f, 1.0f, 1.0f); 
-			// angle += speed; 
+			angle += speed; 
 
 			gl.glFrontFace(GL10.GL_CCW); 
 			gl.glEnable(GL10.GL_CULL_FACE); 
@@ -231,7 +290,7 @@ public class MainActivity extends Activity
 			gl.glTranslatef(0.0f, 0.0f, 1.0f); 
 			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, 4); 
 			gl.glPopMatrix(); 
-			
+
 			gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 			gl.glDisableClientState(GL10.GL_VERTEX_ARRAY); 
 			gl.glDisable(GL10.GL_CULL_FACE);
