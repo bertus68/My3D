@@ -6,17 +6,17 @@ import android.opengl.*;
 import android.opengl.GLSurfaceView.*;
 import android.view.*;
 import android.content.*;
+import android.graphics.*;
 import javax.microedition.khronos.egl.*;
 import javax.microedition.khronos.opengles.*;
 import java.nio.*;
 import java.io.*;
-import android.graphics.*;
 
 public class MainActivity extends Activity 
 {
-	
+
 	private GLSurfaceView glView;
-	
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -25,11 +25,11 @@ public class MainActivity extends Activity
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 							 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		setContentView(R.layout.main);
-		
+
 		glView = findViewById(R.id.GLVIEW);
 		glView.setRenderer(new MyRenderer3D(this));
     }
-	
+
 	@Override 
 	protected void onPause() {
 		super.onPause(); 
@@ -41,15 +41,17 @@ public class MainActivity extends Activity
 		super.onResume(); 
 		glView.onResume();
 	}
-	
+
 	public static class MyRenderer3D implements Renderer {
 
 		private Context context;
 		private Cube cube;
 		private Light light;
+		private LookAt lookAt;
 
 		public MyRenderer3D(Context context) {
 			this.context = context;
+			lookAt = new LookAt();
 			light = new Light();
 			cube = new Cube();
 		} 
@@ -68,7 +70,6 @@ public class MainActivity extends Activity
 
 			light.create(gl, config);
 			cube.loadTexture(gl, context);
-
 		}
 
 		@Override 
@@ -84,49 +85,40 @@ public class MainActivity extends Activity
 			gl.glLoadIdentity();
 		} 
 
-		
 		@Override 
 		public void onDrawFrame(GL10 gl) {
 			gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+			gl.glLoadIdentity(); 
+			lookAt.draw(gl);
 			light.draw(gl);
 			cube.draw(gl);
-
 		}
-
 	}
-
 
 	public static abstract class Drawable {
 		public abstract void draw(GL10 gl);
 	}
-	
-	class Look extends Drawable
-	{
-		
-		class Position {
-			float x;
-			float y;
-			float z;
 
+	public static class LookAt extends Drawable {
+		class Position {
+			float x, y, z;
 			public Position(float x, float y, float z) {
 				this.x = x;
 				this.y = y;
 				this.z = z;
 			}
-
 		}
-
-		Position eye = new Position(0.0f, 0.0f, 0.0f);
-		Position center = new Position(0.0f, 1.8f, 0.0f);
-		Position up = new Position(0.0f, 1.0f, 0.0f);
 		
+		Position eye = new Position(0.0f, 1.8f, 0.0f);
+		Position center = new Position(0.0f, 0.0f, -6.0f);
+		Position up = new Position(0.0f, 1.0f, 0.0f);
+
 		public void draw(GL10 gl) {
 			GLU.gluLookAt(gl, eye.x, eye.y, eye.z, center.x, center.y, center.z, up.x, up.y, up.z);
 		}
 	}
-	
-	public static class Light extends Drawable
-	{
+
+	public static class Light extends Drawable {
 		private boolean enabled = true; 
 		private float[] ambient = {0.5f, 0.5f, 0.5f, 1.0f}; 
 		private float[] diffuse = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -149,9 +141,8 @@ public class MainActivity extends Activity
 			} 
 		}
 	}
-	
-	public static class Cube {
 
+	public static class Cube {
 		private static float angle = 0.0f;
 		private static float speed = -1.5f;
 		private static int texture = 2;
@@ -189,12 +180,12 @@ public class MainActivity extends Activity
 
 		public void draw(GL10 gl) { 
 
-			gl.glLoadIdentity(); 
-
+			gl.glPushMatrix();
+			
 			gl.glTranslatef(0.0f, 0.0f, -6.0f);
 			gl.glScalef(0.8f, 0.8f, 0.8f); 
 			gl.glRotatef(angle, 1.0f, 1.0f, 1.0f); 
-			angle += speed; 
+			// angle += speed; 
 
 			gl.glFrontFace(GL10.GL_CCW); 
 			gl.glEnable(GL10.GL_CULL_FACE); 
@@ -240,10 +231,12 @@ public class MainActivity extends Activity
 			gl.glTranslatef(0.0f, 0.0f, 1.0f); 
 			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, 4); 
 			gl.glPopMatrix(); 
-
+			
 			gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 			gl.glDisableClientState(GL10.GL_VERTEX_ARRAY); 
 			gl.glDisable(GL10.GL_CULL_FACE);
+
+			gl.glPopMatrix(); 
 		} 
 
 		public void rotate(GL10 gl, float x, float y, float z){
@@ -286,6 +279,5 @@ public class MainActivity extends Activity
 
 			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); bitmap.recycle(); 
 		}
-
 	}
 }
