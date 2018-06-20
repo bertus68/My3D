@@ -19,7 +19,7 @@ public class MainActivity extends Activity
 	enum SIDE {
 		LEFT,
 		RIGHT
-		}
+	}
 
 	private GLSurfaceView leftView;
 	private GLSurfaceView rightView;
@@ -54,24 +54,38 @@ public class MainActivity extends Activity
 		rightView.onResume();
 	}
 
-	public static class MyRenderer3D implements Renderer {
+	public class MyRenderer3D implements Renderer {
 
 		private final Context context;
 		private final SIDE side;
 
 		private Cube cube;
+		private Cube[][] cubes = new Cube[10][10];
+		
 		private Light light;
 		private LookAt lookAt;
 
 		public MyRenderer3D(Context context, SIDE side) {
 			this.context = context;
 			this.side = side;
+			
 			lookAt = new LookAt(
-				new Position(0.0f+(side == SIDE.LEFT ? +1.0f : -1.0f), 0.0f, 0.0f),
-				new Position(0.0f, 0.0f, -6.0f),
-				new Position(1.0f, 0.0f, 0.0f));
+				new Position(0.0f+(side == SIDE.LEFT ? +0.1f : -0.1f), 10.0f, 0.0f),
+				new Position(0.0f, 5.0f, -20.0f),
+				new Position(0.0f, 1.0f, 0.0f));
+				
 			light = new Light();
-			cube = new Cube();
+			
+			//cube = new Cube();
+			//cube.setPosition(new Position(0.0f, 0.0f, -6.0f));
+			
+			for(int ix=0;ix<9;ix++) {
+				for(int iz=0;iz<9;iz++) {
+					cubes[ix][iz] = new Cube();
+					cubes[ix][iz].setPosition(new Position(-10f+(2.0f*ix), 0.0f, -20.0f-(2.0f*iz)));
+				}
+			}
+			
 		} 
 
 		@Override 
@@ -87,7 +101,8 @@ public class MainActivity extends Activity
 			gl.glDisable(GL10.GL_DITHER);
 
 			light.create(gl, config);
-			cube.loadTexture(gl, context);
+			loadTexture(gl, context);
+			
 		}
 
 		@Override 
@@ -109,7 +124,14 @@ public class MainActivity extends Activity
 			gl.glLoadIdentity(); 
 			lookAt.draw(gl);
 			light.draw(gl);
-			cube.draw(gl);
+			// cube.draw(gl);
+			
+			for(int ix=0;ix<9;ix++) {
+				for(int iz=0;iz<9;iz++) {
+					cubes[ix][iz].draw(gl);
+				}
+			}
+			
 		}
 	}
 
@@ -200,11 +222,17 @@ public class MainActivity extends Activity
 		}
 	}
 
-	public static class Cube extends Drawable {
-
-		private static float angle = 0.0f;
-		private static float speed = -1.5f;
-		private static int texture = 2;
+	public class Cube extends Drawable {
+		
+		private Position p;
+		
+		public void setPosition(Position p) {
+			this.p = p;
+		}
+		
+		private float angle = 0.0f;
+		private float speed = -1.5f;
+		private int texture = 2;
 
 		private FloatBuffer vertexBuffer; 
 		private FloatBuffer texBuffer; 
@@ -241,10 +269,10 @@ public class MainActivity extends Activity
 
 			gl.glPushMatrix();
 
-			gl.glTranslatef(0.0f, 0.0f, -6.0f);
+			gl.glTranslatef(p.x, p.y, p.z);
 			gl.glScalef(0.8f, 0.8f, 0.8f); 
 			gl.glRotatef(angle, 1.0f, 1.0f, 1.0f); 
-			angle += speed; 
+			// angle += speed; 
 
 			gl.glFrontFace(GL10.GL_CCW); 
 			gl.glEnable(GL10.GL_CULL_FACE); 
@@ -303,40 +331,41 @@ public class MainActivity extends Activity
 			gl.glRotatef(y, 0.0f, 1.0f, 0.0f);
 			gl.glRotatef(z, 0.0f, 0.0f, 1.0f);
 		}
-
-		private int[] textures = new int[3]; 
-
-		public void loadTexture(GL10 gl, Context context) {
-
-			InputStream istream = context.getResources().openRawResource(R.drawable.texture); 
-			Bitmap bitmap; 
-			try { 
-				bitmap = BitmapFactory.decodeStream(istream); 
-			} finally { 
-				try { 
-					istream.close(); 
-				} catch(IOException e) { } 
-			}
-
-			gl.glGenTextures(3, textures, 0);
-
-			gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]); 
-			gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);
-			gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
-			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); 
-
-			gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[1]); 
-			gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR); 
-			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); 
-
-			gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[2]);
-			gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR); 
-			gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST); 
-			if(gl instanceof GL11) { 
-				gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-			} 
-
-			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); bitmap.recycle(); 
-		}
 	}
+	
+	private int[] textures = new int[3]; 
+
+	public void loadTexture(GL10 gl, Context context) {
+
+		InputStream istream = context.getResources().openRawResource(R.drawable.texture); 
+		Bitmap bitmap; 
+		try { 
+			bitmap = BitmapFactory.decodeStream(istream); 
+		} finally { 
+			try { 
+				istream.close(); 
+			} catch(IOException e) { } 
+		}
+
+		gl.glGenTextures(3, textures, 0);
+
+		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]); 
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_NEAREST);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
+		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); 
+
+		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[1]); 
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR); 
+		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); 
+
+		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[2]);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR); 
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR_MIPMAP_NEAREST); 
+		if(gl instanceof GL11) { 
+			gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+		} 
+
+		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0); bitmap.recycle(); 
+	}
+	
 }

@@ -1,18 +1,18 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical">
+    android:orientation="horizontal">
 
 	<android.opengl.GLSurfaceView
 		android:id="@+id/LEFTVIEW"
-		android:layout_width="fill_parent"
-		android:layout_height="0sp"
+		android:layout_width="0sp"
+		android:layout_height="fill_parent"
 		android:layout_weight="1"/>
 	
 	<android.opengl.GLSurfaceView
 		android:id="@+id/RIGHTVIEW"
-		android:layout_width="fill_parent"
-		android:layout_height="0sp"
+		android:layout_width="0sp"
+		android:layout_height="fill_parent"
 		android:layout_weight="1"/>
 	
 </LinearLayout>
